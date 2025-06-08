@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js required models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  planType      PlanType  @default(STARTER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  projects Project[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// SEO Application models
+enum PlanType {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String
+  userId      String
+  settings    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keywords  Keyword[]
+  audits    SiteAudit[]
+  backlinks Backlink[]
+
+  @@map("projects")
+}
+
+model Keyword {
+  id           String   @id @default(cuid())
+  keyword      String
+  projectId    String
+  searchVolume Int?
+  difficulty   Float?
+  cpc          Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  rankings Ranking[]
+
+  @@unique([keyword, projectId])
+  @@map("keywords")
+}
+
+model Ranking {
+  id           String   @id @default(cuid())
+  keywordId    String
+  position     Int
+  url          String?
+  searchEngine String   @default("google")
+  location     String   @default("US")
+  device       String   @default("desktop")
+  date         DateTime @default(now())
+
+  keyword Keyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  @@map("rankings")
+}
+
+model SiteAudit {
+  id        String   @id @default(cuid())
+  projectId String
+  score     Int
+  issues    Json
+  createdAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("site_audits")
+}
+
+model Backlink {
+  id         String   @id @default(cuid())
+  projectId  String
+  sourceUrl  String
+  targetUrl  String
+  anchorText String?
+  domainRank Int?
+  discovered DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("backlinks")
+}
