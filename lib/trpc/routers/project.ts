@@ -98,7 +98,9 @@ export const projectRouter = router({
     .mutation(async ({ ctx, input }) => {
       const project = await ctx.prisma.project.create({
         data: {
-          ...input,
+          name: input.name,
+          domain: input.domain,
+          settings: input.settings || {},
           userId: ctx.session.user.id,
         },
       })

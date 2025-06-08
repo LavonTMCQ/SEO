@@ -2,8 +2,9 @@
 
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function AuthError() {
+function ErrorContent() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
 
@@ -36,14 +37,14 @@ export default function AuthError() {
         </div>
 
         <div className="space-y-4">
-          <Link 
+          <Link
             href="/auth/signin"
             className="w-full btn btn-primary"
           >
             Try Again
           </Link>
-          
-          <Link 
+
+          <Link
             href="/"
             className="w-full btn btn-secondary"
           >
@@ -60,5 +61,20 @@ export default function AuthError() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function AuthError() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-slate-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ErrorContent />
+    </Suspense>
   )
 }
