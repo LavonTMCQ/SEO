@@ -1,7 +1,7 @@
 import { type FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '../auth'
-import { prisma } from '../prisma'
+// import { prisma } from '../prisma'
 
 export async function createTRPCContext(opts: FetchCreateContextFnOptions) {
   // Get the session from the server - handle App Router context
@@ -14,7 +14,7 @@ export async function createTRPCContext(opts: FetchCreateContextFnOptions) {
 
   return {
     session,
-    prisma,
+    // prisma, // Temporarily disabled for initial deployment
   }
 }
 

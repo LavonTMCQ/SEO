@@ -4,90 +4,62 @@ import { router, publicProcedure, protectedProcedure } from '../trpc'
 export const projectRouter = router({
   // Get all user projects
   getAll: publicProcedure.query(async ({ ctx }) => {
-    // If no session, return empty array
-    if (!ctx.session?.user?.id) {
-      return []
-    }
-
-    const projects = await ctx.prisma.project.findMany({
-      where: { userId: ctx.session.user.id },
-      include: {
-        keywords: {
-          include: {
-            rankings: {
-              orderBy: { date: 'desc' },
-              take: 1,
-            },
-          },
-        },
+    // Return demo projects for initial deployment
+    return [
+      {
+        id: 'demo-project-1',
+        name: 'My Website',
+        domain: 'https://example.com',
+        userId: 'demo-user',
+        settings: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
         _count: {
-          select: {
-            keywords: true,
-            audits: true,
-            backlinks: true,
-          },
+          keywords: 10,
+          audits: 2,
+          backlinks: 45,
         },
+        avgPosition: 8.5,
       },
-      orderBy: { createdAt: 'desc' },
-    })
-
-    // Calculate average position for each project
-    const projectsWithStats = projects.map(project => {
-      const latestRankings = project.keywords
-        .map(keyword => keyword.rankings[0])
-        .filter(Boolean)
-
-      const avgPosition = latestRankings.length > 0
-        ? latestRankings.reduce((sum, ranking) => sum + ranking.position, 0) / latestRankings.length
-        : 0
-
-      return {
-        ...project,
-        avgPosition: Math.round(avgPosition * 10) / 10,
-      }
-    })
-
-    return projectsWithStats
+      {
+        id: 'demo-project-2',
+        name: 'E-commerce Store',
+        domain: 'https://shop.example.com',
+        userId: 'demo-user',
+        settings: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        _count: {
+          keywords: 15,
+          audits: 3,
+          backlinks: 78,
+        },
+        avgPosition: 12.3,
+      },
+    ]
   }),
 
   // Get single project by ID
-  getById: protectedProcedure
+  getById: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
-      const project = await ctx.prisma.project.findFirst({
-        where: {
-          id: input.id,
-          userId: ctx.session.user.id,
-        },
-        include: {
-          keywords: {
-            include: {
-              rankings: {
-                orderBy: { date: 'desc' },
-                take: 30, // Last 30 rankings for trend analysis
-              },
-            },
-          },
-          audits: {
-            orderBy: { createdAt: 'desc' },
-            take: 5,
-          },
-          backlinks: {
-            orderBy: { discovered: 'desc' },
-            take: 100,
-          },
-        },
-      })
-
-      if (!project) {
-        throw new Error('Project not found')
+      // Return mock project for initial deployment
+      return {
+        id: input.id,
+        name: 'Demo Project',
+        domain: 'https://example.com',
+        userId: 'demo-user',
+        settings: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        keywords: [],
+        audits: [],
+        backlinks: [],
       }
-
-      return project
     }),
 
   // Create new project
-  create: protectedProcedure
+  create: publicProcedure
     .input(
       z.object({
         name: z.string().min(1, 'Project name is required'),
@@ -96,19 +68,20 @@ export const projectRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const project = await ctx.prisma.project.create({
-        data: {
-          name: input.name,
-          domain: input.domain,
-          settings: input.settings || {},
-          userId: ctx.session.user.id,
-        },
-      })
-      return project
+      // Return mock project for initial deployment
+      return {
+        id: `demo-project-${Date.now()}`,
+        name: input.name,
+        domain: input.domain,
+        userId: 'demo-user',
+        settings: input.settings || {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
     }),
 
   // Update project
-  update: protectedProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string(),
@@ -118,38 +91,23 @@ export const projectRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
-
-      const project = await ctx.prisma.project.updateMany({
-        where: {
-          id,
-          userId: ctx.session.user.id,
-        },
-        data,
-      })
-
-      if (project.count === 0) {
-        throw new Error('Project not found or unauthorized')
+      // Return mock update for initial deployment
+      return {
+        id: input.id,
+        name: input.name || 'Updated Project',
+        domain: input.domain || 'https://example.com',
+        userId: 'demo-user',
+        settings: input.settings || {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
       }
-
-      return project
     }),
 
   // Delete project
-  delete: protectedProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const project = await ctx.prisma.project.deleteMany({
-        where: {
-          id: input.id,
-          userId: ctx.session.user.id,
-        },
-      })
-
-      if (project.count === 0) {
-        throw new Error('Project not found or unauthorized')
-      }
-
+      // Return mock delete for initial deployment
       return { success: true }
     }),
 })

@@ -3,29 +3,19 @@ import { router, publicProcedure, protectedProcedure } from '../trpc'
 
 export const userRouter = router({
   // Get current user profile
-  getProfile: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.prisma.user.findUnique({
-      where: { id: ctx.session.user.id },
-      include: {
-        projects: {
-          include: {
-            keywords: true,
-            _count: {
-              select: {
-                keywords: true,
-                audits: true,
-                backlinks: true,
-              },
-            },
-          },
-        },
-      },
-    })
-    return user
+  getProfile: publicProcedure.query(async ({ ctx }) => {
+    // Return mock user for initial deployment
+    return {
+      id: 'demo-user',
+      name: 'Demo User',
+      email: 'demo@example.com',
+      planType: 'STARTER',
+      projects: [],
+    }
   }),
 
   // Update user profile
-  updateProfile: protectedProcedure
+  updateProfile: publicProcedure
     .input(
       z.object({
         name: z.string().optional(),
@@ -33,60 +23,23 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.update({
-        where: { id: ctx.session.user.id },
-        data: input,
-      })
-      return user
+      // Return mock update for initial deployment
+      return {
+        id: 'demo-user',
+        name: input.name || 'Demo User',
+        email: 'demo@example.com',
+        planType: input.planType || 'STARTER',
+      }
     }),
 
   // Get user statistics
   getStats: publicProcedure.query(async ({ ctx }) => {
-    // If no session, return demo stats
-    if (!ctx.session?.user?.id) {
-      return {
-        projectCount: 0,
-        keywordCount: 0,
-        totalRankings: 0,
-        avgPosition: 0,
-      }
-    }
-
-    const userId = ctx.session.user.id
-
-    const [projectCount, keywordCount, totalRankings] = await Promise.all([
-      ctx.prisma.project.count({
-        where: { userId },
-      }),
-      ctx.prisma.keyword.count({
-        where: { project: { userId } },
-      }),
-      ctx.prisma.ranking.count({
-        where: { keyword: { project: { userId } } },
-      }),
-    ])
-
-    // Get average position for last 30 days
-    const thirtyDaysAgo = new Date()
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-
-    const recentRankings = await ctx.prisma.ranking.findMany({
-      where: {
-        keyword: { project: { userId } },
-        date: { gte: thirtyDaysAgo },
-      },
-      select: { position: true },
-    })
-
-    const avgPosition = recentRankings.length > 0
-      ? recentRankings.reduce((sum, r) => sum + r.position, 0) / recentRankings.length
-      : 0
-
+    // Return demo stats for initial deployment
     return {
-      projectCount,
-      keywordCount,
-      totalRankings,
-      avgPosition: Math.round(avgPosition * 10) / 10,
+      projectCount: 3,
+      keywordCount: 25,
+      totalRankings: 150,
+      avgPosition: 12.5,
     }
   }),
 })
